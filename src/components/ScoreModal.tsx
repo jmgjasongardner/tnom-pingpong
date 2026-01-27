@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Match, Player } from '@/types/bracket';
+import { Match, Player, GameScore } from '@/types/bracket';
 
 interface ScoreModalProps {
   match: Match;
@@ -9,7 +9,7 @@ interface ScoreModalProps {
   player2: Player;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (player1Score: number, player2Score: number) => Promise<void>;
+  onSubmit: (gameScores: GameScore[]) => Promise<void>;
 }
 
 export function ScoreModal({
@@ -20,41 +20,51 @@ export function ScoreModal({
   onClose,
   onSubmit,
 }: ScoreModalProps) {
-  const [score1, setScore1] = useState<number>(match.player1_score ?? 0);
-  const [score2, setScore2] = useState<number>(match.player2_score ?? 0);
+  const [games, setGames] = useState<GameScore[]>([
+    { p1: 0, p2: 0 },
+    { p1: 0, p2: 0 },
+    { p1: 0, p2: 0 },
+  ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
+  const updateGame = (gameIndex: number, player: 'p1' | 'p2', value: number) => {
+    const newGames = [...games];
+    newGames[gameIndex] = { ...newGames[gameIndex], [player]: Math.max(0, Math.min(99, value)) };
+    setGames(newGames);
+  };
+
+  // Calculate games won
+  const p1GamesWon = games.filter(g => g.p1 > g.p2 && (g.p1 > 0 || g.p2 > 0)).length;
+  const p2GamesWon = games.filter(g => g.p2 > g.p1 && (g.p1 > 0 || g.p2 > 0)).length;
+  const hasWinner = p1GamesWon >= 2 || p2GamesWon >= 2;
+  const winner = p1GamesWon >= 2 ? player1 : p2GamesWon >= 2 ? player2 : null;
+
   const handleSubmit = async () => {
     setError(null);
 
-    // Validate: must have a winner (best of 3, so someone needs 2)
-    if (score1 === score2) {
-      setError('Scores cannot be tied - there must be a winner!');
+    // Validate: need a winner (best of 3)
+    if (!hasWinner) {
+      setError('Enter scores until one player wins 2 games');
       return;
     }
 
-    if (score1 > 2 || score2 > 2) {
-      setError('Maximum score is 2 (best of 3 games)');
-      return;
-    }
+    // Filter to only played games
+    const playedGames = games.filter(g => g.p1 > 0 || g.p2 > 0);
 
-    if (score1 < 0 || score2 < 0) {
-      setError('Scores cannot be negative');
-      return;
-    }
-
-    // Winner must have 2
-    if (score1 !== 2 && score2 !== 2) {
-      setError('Winner must have 2 games (best of 3)');
-      return;
+    // Validate no ties in individual games
+    for (const game of playedGames) {
+      if (game.p1 === game.p2) {
+        setError('Individual games cannot be tied');
+        return;
+      }
     }
 
     setIsSubmitting(true);
     try {
-      await onSubmit(score1, score2);
+      await onSubmit(playedGames);
     } catch (e) {
       setError('Failed to save score. Please try again.');
     } finally {
@@ -64,71 +74,85 @@ export function ScoreModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4">
         <div className="p-6">
-          <h2 className="text-xl font-bold text-center mb-6 text-gray-800">
+          <h2 className="text-xl font-bold text-center mb-2 text-gray-800">
             Enter Match Score
           </h2>
-          <p className="text-sm text-gray-500 text-center mb-4">
-            Best of 3 games to 15
+          <p className="text-sm text-gray-500 text-center mb-6">
+            Best of 3 games to 15 points
           </p>
 
-          <div className="space-y-4">
-            {/* Player 1 */}
-            <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">({player1.display_seed})</span>
-                <span className="font-medium">{player1.name}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setScore1(Math.max(0, score1 - 1))}
-                  className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg font-bold"
-                >
-                  -
-                </button>
-                <span className="w-12 h-12 text-2xl text-center border-2 border-gray-300 rounded-lg flex items-center justify-center font-mono">
-                  {score1}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setScore1(Math.min(2, score1 + 1))}
-                  className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg font-bold"
-                >
-                  +
-                </button>
-              </div>
+          {/* Player names header */}
+          <div className="grid grid-cols-[1fr,auto,1fr] gap-4 mb-4 text-center">
+            <div className="font-semibold text-gray-700">
+              <span className="text-sm text-gray-400">({player1.display_seed}) </span>
+              {player1.name}
             </div>
-
-            <div className="text-center text-gray-400 font-semibold">vs</div>
-
-            {/* Player 2 */}
-            <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">({player2.display_seed})</span>
-                <span className="font-medium">{player2.name}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setScore2(Math.max(0, score2 - 1))}
-                  className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg font-bold"
-                >
-                  -
-                </button>
-                <span className="w-12 h-12 text-2xl text-center border-2 border-gray-300 rounded-lg flex items-center justify-center font-mono">
-                  {score2}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setScore2(Math.min(2, score2 + 1))}
-                  className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-lg font-bold"
-                >
-                  +
-                </button>
-              </div>
+            <div className="text-gray-400 font-bold">vs</div>
+            <div className="font-semibold text-gray-700">
+              <span className="text-sm text-gray-400">({player2.display_seed}) </span>
+              {player2.name}
             </div>
+          </div>
+
+          {/* Game scores */}
+          <div className="space-y-3">
+            {[0, 1, 2].map((gameIndex) => {
+              const game = games[gameIndex];
+              const gameWinner = game.p1 > game.p2 ? 'p1' : game.p2 > game.p1 ? 'p2' : null;
+              const isPlayed = game.p1 > 0 || game.p2 > 0;
+
+              return (
+                <div
+                  key={gameIndex}
+                  className={`grid grid-cols-[1fr,auto,1fr] gap-4 items-center p-3 rounded-lg ${
+                    isPlayed ? 'bg-gray-50' : 'bg-gray-50/50'
+                  }`}
+                >
+                  <div className="flex justify-center">
+                    <input
+                      type="number"
+                      min={0}
+                      max={99}
+                      value={game.p1 || ''}
+                      onChange={(e) => updateGame(gameIndex, 'p1', parseInt(e.target.value) || 0)}
+                      placeholder="0"
+                      className={`w-16 h-12 text-2xl text-center border-2 rounded-lg font-mono
+                        ${gameWinner === 'p1' ? 'border-teal-500 bg-teal-50' : 'border-gray-300'}
+                        focus:border-teal-500 focus:outline-none`}
+                    />
+                  </div>
+                  <div className="text-sm font-medium text-gray-400">
+                    Game {gameIndex + 1}
+                  </div>
+                  <div className="flex justify-center">
+                    <input
+                      type="number"
+                      min={0}
+                      max={99}
+                      value={game.p2 || ''}
+                      onChange={(e) => updateGame(gameIndex, 'p2', parseInt(e.target.value) || 0)}
+                      placeholder="0"
+                      className={`w-16 h-12 text-2xl text-center border-2 rounded-lg font-mono
+                        ${gameWinner === 'p2' ? 'border-teal-500 bg-teal-50' : 'border-gray-300'}
+                        focus:border-teal-500 focus:outline-none`}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Match result summary */}
+          <div className={`mt-4 p-3 rounded-lg text-center ${hasWinner ? 'bg-teal-50' : 'bg-gray-100'}`}>
+            {hasWinner ? (
+              <p className="font-semibold text-teal-700">
+                {winner?.name} wins {p1GamesWon}-{p2GamesWon}
+              </p>
+            ) : (
+              <p className="text-gray-500">Enter scores to determine winner</p>
+            )}
           </div>
 
           {error && (
@@ -147,7 +171,7 @@ export function ScoreModal({
             </button>
             <button
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !hasWinner}
               className="flex-1 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 transition font-medium"
             >
               {isSubmitting ? 'Saving...' : 'Save Score'}

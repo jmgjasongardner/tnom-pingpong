@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { GameScore } from '@/types/bracket';
 
 export async function PATCH(
   request: NextRequest,
@@ -8,15 +9,23 @@ export async function PATCH(
   const { id } = await params;
   const supabase = await createClient();
   const body = await request.json();
-  const { player1_score, player2_score } = body;
+  const { game_scores } = body as { game_scores: GameScore[] };
 
-  // Validate scores
-  if (typeof player1_score !== 'number' || typeof player2_score !== 'number') {
-    return NextResponse.json({ error: 'Invalid scores' }, { status: 400 });
+  // Validate game scores
+  if (!Array.isArray(game_scores) || game_scores.length === 0) {
+    return NextResponse.json({ error: 'Invalid game scores' }, { status: 400 });
   }
 
-  if (player1_score === player2_score) {
-    return NextResponse.json({ error: 'Scores cannot be tied' }, { status: 400 });
+  // Calculate games won
+  let player1GamesWon = 0;
+  let player2GamesWon = 0;
+  for (const game of game_scores) {
+    if (game.p1 > game.p2) player1GamesWon++;
+    else if (game.p2 > game.p1) player2GamesWon++;
+  }
+
+  if (player1GamesWon < 2 && player2GamesWon < 2) {
+    return NextResponse.json({ error: 'No winner determined' }, { status: 400 });
   }
 
   // Get current match to find players and next match
@@ -31,14 +40,15 @@ export async function PATCH(
   }
 
   // Determine winner
-  const winner_id = player1_score > player2_score ? match.player1_id : match.player2_id;
+  const winner_id = player1GamesWon > player2GamesWon ? match.player1_id : match.player2_id;
 
   // Update current match
   const { error: updateError } = await supabase
     .from('matches')
     .update({
-      player1_score,
-      player2_score,
+      player1_score: player1GamesWon,
+      player2_score: player2GamesWon,
+      game_scores: JSON.stringify(game_scores),
       winner_id,
       status: 'completed',
       updated_at: new Date().toISOString(),

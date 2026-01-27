@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Technomics Ping Pong Tournament",
-  description: "Official bracket for the Technomics Ping Pong Tournament",
+  title: "Technomics March Madness Ping Pong Tournament",
+  description: "Official bracket for the Technomics March Madness Ping Pong Tournament",
 };
 
 export default function RootLayout({

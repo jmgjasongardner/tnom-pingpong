@@ -6,14 +6,22 @@ export interface Player {
   created_at?: string;
 }
 
+// Individual game scores (e.g., [15, 12] means player1 scored 15, player2 scored 12)
+export interface GameScore {
+  p1: number;
+  p2: number;
+}
+
 export interface Match {
   id: number;
   round: Round;
   match_number: number;
   player1_id: number | null;
   player2_id: number | null;
-  player1_score: number | null;
+  player1_score: number | null; // Games won (0, 1, or 2)
   player2_score: number | null;
+  // Detailed game scores stored as JSON string: "[{\"p1\":15,\"p2\":12},{\"p1\":15,\"p2\":8}]"
+  game_scores: string | null;
   winner_id: number | null;
   next_match_id: number | null;
   next_match_slot: 1 | 2 | null;
@@ -56,4 +64,18 @@ export const ROUND_ORDER: Round[] = [
 
 export function getDisplaySeed(actualSeed: number): number {
   return Math.ceil(actualSeed / 4);
+}
+
+export function parseGameScores(jsonString: string | null): GameScore[] {
+  if (!jsonString) return [];
+  try {
+    return JSON.parse(jsonString);
+  } catch {
+    return [];
+  }
+}
+
+export function formatGameScores(scores: GameScore[]): string {
+  if (scores.length === 0) return '';
+  return scores.map(g => `${g.p1}-${g.p2}`).join(', ');
 }

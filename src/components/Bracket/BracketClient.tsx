@@ -1,6 +1,6 @@
 'use client';
 
-import { Match, Player } from '@/types/bracket';
+import { Match, Player, GameScore } from '@/types/bracket';
 import { useRealTimeMatches } from '@/hooks/useRealTimeMatches';
 import { Bracket } from './Bracket';
 
@@ -12,18 +12,11 @@ interface BracketClientProps {
 export function BracketClient({ initialMatches, players }: BracketClientProps) {
   const { matches } = useRealTimeMatches(initialMatches);
 
-  const handleScoreSubmit = async (
-    matchId: number,
-    player1Score: number,
-    player2Score: number
-  ) => {
+  const handleScoreSubmit = async (matchId: number, gameScores: GameScore[]) => {
     const response = await fetch(`/api/matches/${matchId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        player1_score: player1Score,
-        player2_score: player2Score,
-      }),
+      body: JSON.stringify({ game_scores: gameScores }),
     });
 
     if (!response.ok) {

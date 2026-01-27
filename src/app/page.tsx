@@ -1,11 +1,12 @@
 import { createClient } from '@/lib/supabase/server';
-import { Header } from '@/components/Header';
-import { BracketClient } from '@/components/Bracket/BracketClient';
 import { Match, Player } from '@/types/bracket';
+import { BracketView } from '@/components/Bracket/BracketView';
+import Link from 'next/link';
+import Image from 'next/image';
 
 export const dynamic = 'force-dynamic';
 
-export default async function BracketPage() {
+export default async function Home() {
   const supabase = await createClient();
 
   const { data: matches, error: matchesError } = await supabase
@@ -19,66 +20,56 @@ export default async function BracketPage() {
     .select('*')
     .order('seed');
 
-  // If there's no data yet (Supabase not set up), show setup instructions
   if (matchesError || playersError || !matches?.length || !players?.length) {
     return (
-      <main className="min-h-screen bg-background">
-        <Header />
-        <div className="max-w-4xl mx-auto p-8">
-          <div className="bg-white rounded-xl shadow-lg p-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              Tournament Setup Required
-            </h2>
-            <p className="text-gray-600 mb-6">
-              The tournament bracket needs to be initialized. Please follow these steps:
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Setup Required</h2>
+          <p className="text-gray-600">
+            Tournament data not found. Please run the seed script.
+          </p>
+          {(matchesError || playersError) && (
+            <p className="mt-4 text-red-600 text-sm">
+              {matchesError?.message || playersError?.message}
             </p>
-            <ol className="list-decimal list-inside space-y-4 text-gray-700">
-              <li>
-                <strong>Create a Supabase project</strong> at{' '}
-                <a
-                  href="https://supabase.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-teal-600 hover:underline"
-                >
-                  supabase.com
-                </a>
-              </li>
-              <li>
-                <strong>Create the database tables</strong> by running the SQL schema
-                (see <code className="bg-gray-100 px-1 rounded">SETUP.md</code>)
-              </li>
-              <li>
-                <strong>Add your Supabase credentials</strong> to{' '}
-                <code className="bg-gray-100 px-1 rounded">.env.local</code>
-              </li>
-              <li>
-                <strong>Run the seeding script</strong> to initialize players and matches
-              </li>
-            </ol>
-
-            {(matchesError || playersError) && (
-              <div className="mt-6 p-4 bg-red-50 rounded-lg">
-                <p className="text-red-700 text-sm">
-                  Error: {matchesError?.message || playersError?.message}
-                </p>
-              </div>
-            )}
-          </div>
+          )}
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-background">
-      <Header />
-      <div className="p-4">
-        <BracketClient
-          initialMatches={matches as Match[]}
-          players={players as Player[]}
-        />
-      </div>
-    </main>
+    <div className="min-h-screen bg-gray-100">
+      {/* Header */}
+      <header className="bg-teal-600 text-white py-3 px-4 shadow-md sticky top-0 z-20">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <Image
+              src="/technomics-logo.png"
+              alt="Technomics"
+              width={36}
+              height={36}
+              className="rounded"
+            />
+            <div>
+              <h1 className="text-base font-bold leading-tight">Technomics March Madness</h1>
+              <p className="text-teal-200 text-xs">Ping Pong Tournament</p>
+            </div>
+          </div>
+          <Link
+            href="/report"
+            className="bg-white text-teal-600 px-4 py-2 rounded-lg font-medium hover:bg-teal-50 transition text-sm"
+          >
+            Report Scores
+          </Link>
+        </div>
+      </header>
+
+      {/* Bracket */}
+      <BracketView
+        matches={matches as Match[]}
+        players={players as Player[]}
+      />
+    </div>
   );
 }
