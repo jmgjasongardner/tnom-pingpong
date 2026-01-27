@@ -3,6 +3,7 @@ export interface Player {
   seed: number;
   name: string;
   display_seed: number;
+  quadrant?: 1 | 2 | 3 | 4;
   created_at?: string;
 }
 
@@ -16,6 +17,8 @@ export interface Match {
   id: number;
   round: Round;
   match_number: number;
+  quadrant: 1 | 2 | 3 | 4 | null;
+  quadrant_match_num: number | null;
   player1_id: number | null;
   player2_id: number | null;
   player1_score: number | null; // Games won (0, 1, or 2)

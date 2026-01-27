@@ -20,6 +20,7 @@ interface PlayerData {
   seed: number;
   name: string;
   display_seed: number;
+  quadrant: number;
 }
 
 interface MatchCSVRow {
@@ -28,20 +29,28 @@ interface MatchCSVRow {
   player1_seed: number | null;
   player2_seed: number | null;
   next_match: string | null;
+  quadrant: number | null;
+  quadrant_match_num: number | null;
 }
 
 function parsePlayersCSV(filepath: string): PlayerData[] {
   const content = fs.readFileSync(filepath, 'utf-8');
   const lines = content.split('\n').filter((line) => line.trim());
 
-  return lines.map((line) => {
+  // Skip header row
+  const dataLines = lines.slice(1);
+
+  return dataLines.map((line) => {
     const parts = line.split(',');
-    const seed = parseInt(parts[0].trim());
-    const name = parts[1]?.trim() || `Player ${seed}`;
+    const rank = parseInt(parts[0].trim());
+    const name = parts[1]?.trim() || `Player ${rank}`;
+    const seed = parseInt(parts[2]?.trim() || parts[0].trim());
+    const quadrant = parseInt(parts[3]?.trim() || '1');
     return {
-      seed,
+      seed: rank, // Use rank as the seed (1-76)
       name,
-      display_seed: Math.ceil(seed / 4),
+      display_seed: seed, // The "Seed" column is actually display_seed (1-19)
+      quadrant,
     };
   });
 }
@@ -60,6 +69,10 @@ function parseMatchesCSV(filepath: string): MatchCSVRow[] {
     const p1 = parts[2]?.trim();
     const p2 = parts[3]?.trim();
     const next_match = parts[4]?.trim() || null;
+    const quadrantStr = parts[5]?.trim();
+    const quadrant = quadrantStr ? parseInt(quadrantStr) : null;
+    const quadrantMatchNumStr = parts[6]?.trim();
+    const quadrant_match_num = quadrantMatchNumStr ? parseInt(quadrantMatchNumStr) : null;
 
     return {
       round,
@@ -67,6 +80,8 @@ function parseMatchesCSV(filepath: string): MatchCSVRow[] {
       player1_seed: p1 && p1 !== 'TBD' ? parseInt(p1) : null,
       player2_seed: p2 && p2 !== 'TBD' ? parseInt(p2) : null,
       next_match: next_match || null,
+      quadrant,
+      quadrant_match_num,
     };
   });
 }
@@ -118,6 +133,8 @@ async function seed() {
   const matchInserts = matchesData.map((m) => ({
     round: m.round,
     match_number: m.match_number,
+    quadrant: m.quadrant,
+    quadrant_match_num: m.quadrant_match_num,
     player1_id: m.player1_seed ? seedToId.get(m.player1_seed) : null,
     player2_id: m.player2_seed ? seedToId.get(m.player2_seed) : null,
     status: m.player1_seed && m.player2_seed ? 'ready' : 'pending',
@@ -135,14 +152,18 @@ async function seed() {
 
   console.log(`Inserted ${insertedMatches?.length} matches\n`);
 
-  // Build match key to ID map
+  // Build match key to ID map and match data map
   const matchIdMap = new Map<string, number>();
+  const matchDataMap = new Map<string, MatchCSVRow>();
   for (const match of insertedMatches || []) {
     matchIdMap.set(`${match.round}-${match.match_number}`, match.id);
   }
+  for (const m of matchesData) {
+    matchDataMap.set(`${m.round}-${m.match_number}`, m);
+  }
 
   // Track which slot each match feeds into for its next_match
-  // First match to feed into a given next_match gets slot 1, second gets slot 2
+  // For matches with both TBD: first feeder gets slot 1, second gets slot 2
   const nextMatchSlotTracker = new Map<string, number>();
 
   console.log('Linking matches...');
@@ -154,11 +175,26 @@ async function seed() {
     const currentMatchKey = `${m.round}-${m.match_number}`;
     const currentMatchId = matchIdMap.get(currentMatchKey);
     const nextMatchId = matchIdMap.get(m.next_match);
+    const nextMatchData = matchDataMap.get(m.next_match);
 
-    if (currentMatchId && nextMatchId) {
-      // Determine slot: first feeder gets slot 1, second gets slot 2
-      const currentSlot = (nextMatchSlotTracker.get(m.next_match) || 0) + 1;
-      nextMatchSlotTracker.set(m.next_match, currentSlot);
+    if (currentMatchId && nextMatchId && nextMatchData) {
+      let currentSlot: number;
+
+      // Determine slot based on target match structure:
+      // - If target has player1 set and player2 TBD: feeder goes to slot 2
+      // - If target has player2 set and player1 TBD: feeder goes to slot 1
+      // - If both TBD: use counter (first feeder slot 1, second slot 2)
+      if (nextMatchData.player1_seed && !nextMatchData.player2_seed) {
+        // player1 is set, feeder must go to slot 2
+        currentSlot = 2;
+      } else if (!nextMatchData.player1_seed && nextMatchData.player2_seed) {
+        // player2 is set, feeder must go to slot 1
+        currentSlot = 1;
+      } else {
+        // Both TBD - use counter
+        currentSlot = (nextMatchSlotTracker.get(m.next_match) || 0) + 1;
+        nextMatchSlotTracker.set(m.next_match, currentSlot);
+      }
 
       await supabase
         .from('matches')
