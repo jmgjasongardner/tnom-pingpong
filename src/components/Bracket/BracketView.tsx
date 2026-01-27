@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Match, Player, Round } from '@/types/bracket';
 import { useRealTimeMatches } from '@/hooks/useRealTimeMatches';
 
@@ -169,7 +169,7 @@ function BracketDisplay({ matches, players }: { matches: Match[]; players: Playe
   const maxX = Math.max(...Array.from(positions.values()).map(p => p.x)) + 150;
 
   // Generate connector lines
-  const connectors: JSX.Element[] = [];
+  const connectors: React.ReactNode[] = [];
   const matchWidth = 130;
   const matchHeight = 36;
 
