@@ -102,8 +102,8 @@ function BracketDisplay({ matches, players }: { matches: Match[]; players: Playe
     return map;
   }, [matches, matchById]);
 
-  // Calculate positions using tree layout
-  // Start from championship and work backwards
+  // Calculate positions using simple match_number-based layout
+  // Each round positions its matches evenly, with spacing doubling each round
   const positions = useMemo(() => {
     const pos = new Map<number, { x: number; y: number }>();
 
@@ -119,78 +119,50 @@ function BracketDisplay({ matches, players }: { matches: Match[]; players: Playe
       roundX.set(round, idx * (matchWidth + horizontalGap));
     });
 
-    // Start with Round 4 as base (16 matches, evenly spaced)
-    // This is where the main bracket structure is defined
-    const round4Matches = matchesByRound.get('round_4') || [];
-    const r4Height = matchHeight + baseVerticalGap;
+    // Define match counts and spacing for each round
+    // Base unit is the height needed for one match slot
+    const baseUnit = matchHeight + baseVerticalGap;
 
-    round4Matches.forEach((match, idx) => {
-      pos.set(match.id, {
-        x: roundX.get('round_4') || 0,
-        y: idx * r4Height * 2 + r4Height / 2, // Double spacing for tree structure
+    // Round 4 has 16 matches - use as the reference
+    // Each subsequent round has half the matches but double the spacing
+    const roundConfig: { round: Round; count: number; spacingMultiplier: number }[] = [
+      { round: 'play_in', count: 12, spacingMultiplier: 1 },
+      { round: 'round_2', count: 16, spacingMultiplier: 1 },
+      { round: 'round_3', count: 16, spacingMultiplier: 1 },
+      { round: 'round_4', count: 16, spacingMultiplier: 1 },
+      { round: 'sweet_16', count: 8, spacingMultiplier: 2 },
+      { round: 'elite_8', count: 4, spacingMultiplier: 4 },
+      { round: 'final_four', count: 2, spacingMultiplier: 8 },
+      { round: 'championship', count: 1, spacingMultiplier: 16 },
+    ];
+
+    // Total height based on 16 matches with base spacing
+    const totalHeight = 16 * baseUnit;
+
+    for (const { round, count, spacingMultiplier } of roundConfig) {
+      const roundMatches = matchesByRound.get(round) || [];
+      const x = roundX.get(round) || 0;
+
+      // Calculate spacing for this round
+      const spacing = baseUnit * spacingMultiplier;
+
+      // Calculate starting offset to center this round's matches
+      const totalRoundHeight = count * spacing;
+      const startOffset = (totalHeight - totalRoundHeight) / 2 + spacing / 2 - matchHeight / 2;
+
+      // Sort by match_number and position
+      const sortedMatches = [...roundMatches].sort((a, b) => a.match_number - b.match_number);
+
+      sortedMatches.forEach((match, idx) => {
+        pos.set(match.id, {
+          x,
+          y: startOffset + idx * spacing,
+        });
       });
-    });
-
-    // Position Sweet 16 onwards (center between feeders)
-    const laterRounds: Round[] = ['sweet_16', 'elite_8', 'final_four', 'championship'];
-    for (const round of laterRounds) {
-      const roundMatches = matchesByRound.get(round) || [];
-      const x = roundX.get(round) || 0;
-
-      for (const match of roundMatches) {
-        const feeders = feedersMap.get(match.id) || [];
-        if (feeders.length >= 2) {
-          const p1 = pos.get(feeders[0]);
-          const p2 = pos.get(feeders[1]);
-          if (p1 && p2) {
-            pos.set(match.id, { x, y: (p1.y + p2.y) / 2 });
-          }
-        } else if (feeders.length === 1) {
-          const p = pos.get(feeders[0]);
-          if (p) pos.set(match.id, { x, y: p.y });
-        }
-      }
-    }
-
-    // Position earlier rounds (align with where they feed into)
-    const earlierRounds: Round[] = ['round_3', 'round_2', 'play_in'];
-    for (const round of earlierRounds) {
-      const roundMatches = matchesByRound.get(round) || [];
-      const x = roundX.get(round) || 0;
-
-      for (const match of roundMatches) {
-        if (match.next_match_id) {
-          const nextPos = pos.get(match.next_match_id);
-          const nextMatch = matchById.get(match.next_match_id);
-
-          if (nextPos && nextMatch) {
-            // Find which slot this match feeds into (1 or 2)
-            const feeders = feedersMap.get(match.next_match_id) || [];
-            const slotIndex = feeders.indexOf(match.id);
-
-            // If this round has 1:1 mapping to next round, align directly
-            // Otherwise, offset based on slot
-            const nextRoundMatches = matchesByRound.get(nextMatch.round) || [];
-            const thisRoundMatches = roundMatches;
-
-            if (thisRoundMatches.length === nextRoundMatches.length) {
-              // 1:1 mapping - align directly
-              pos.set(match.id, { x, y: nextPos.y });
-            } else {
-              // 2:1 mapping - offset above/below
-              const offset = r4Height / 2;
-              pos.set(match.id, {
-                x,
-                y: nextPos.y + (slotIndex === 0 ? -offset : offset),
-              });
-            }
-          }
-        }
-      }
     }
 
     return pos;
-  }, [matchesByRound, feedersMap, matchById]);
+  }, [matchesByRound]);
 
   // Calculate SVG dimensions
   const maxY = Math.max(...Array.from(positions.values()).map(p => p.y)) + 50;
@@ -240,7 +212,7 @@ function BracketDisplay({ matches, players }: { matches: Match[]; players: Playe
   ];
 
   return (
-    <div className="overflow-auto p-4">
+    <div className="p-4">
       {/* Round headers */}
       <div className="flex mb-2" style={{ paddingLeft: 0 }}>
         {roundLabels.map(({ round, label }, idx) => {

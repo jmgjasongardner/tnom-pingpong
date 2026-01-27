@@ -39,10 +39,10 @@ export default async function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="bg-gray-100" style={{ width: 'fit-content' }}>
       {/* Header */}
       <header className="bg-teal-600 text-white py-3 px-4 shadow-md sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+        <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">
             <Image
               src="/technomics-logo.png"

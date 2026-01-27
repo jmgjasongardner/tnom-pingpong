@@ -32,8 +32,13 @@
   --font-mono: var(--font-geist-mono);
 }
 
-body {
-  background: var(--background);
+html {
+  overflow: auto;
+}
+
+html, body {
+  width: max-content;
+  height: max-content;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
