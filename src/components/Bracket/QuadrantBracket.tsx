@@ -288,15 +288,14 @@ function QuadrantDisplay({ matches, players }: { matches: Match[]; players: Play
         </div>
 
         {/* Round labels */}
-        <div className={`flex mb-1 ${mirrored ? 'flex-row-reverse' : ''}`}>
+        <div className="flex mb-1">
           {displayRounds.map((round, idx) => (
             <div
               key={round}
               className="text-[9px] font-semibold text-gray-400 uppercase text-center"
               style={{
                 width: matchWidth,
-                marginLeft: !mirrored && idx > 0 ? horizontalGap : 0,
-                marginRight: mirrored && idx > 0 ? horizontalGap : 0,
+                marginLeft: idx > 0 ? horizontalGap : 0,
               }}
             >
               {ROUND_LABELS[round]}
