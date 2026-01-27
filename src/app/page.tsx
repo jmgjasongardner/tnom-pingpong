@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { Match, Player } from '@/types/bracket';
-import { BracketView } from '@/components/Bracket/BracketView';
+import { QuadrantBracket } from '@/components/Bracket/QuadrantBracket';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -66,7 +66,7 @@ export default async function Home() {
       </header>
 
       {/* Bracket */}
-      <BracketView
+      <QuadrantBracket
         matches={matches as Match[]}
         players={players as Player[]}
       />

@@ -41,33 +41,28 @@ export function AdminContent() {
   };
 
   const handleUndoMatch = async (match: Match) => {
-    if (!confirm('Are you sure you want to undo this match result? This will also clear any dependent matches.')) {
+    if (!confirm('Are you sure you want to undo this match result? (Downstream matches will not be affected - undo those separately if needed)')) {
       return;
     }
 
-    // Clear the match result
+    // Clear just this match result - don't cascade to downstream matches
     await supabase
       .from('matches')
       .update({
         player1_score: null,
         player2_score: null,
+        game_scores: null,
         winner_id: null,
-        status: 'ready',
+        status: match.player1_id && match.player2_id ? 'ready' : 'pending',
       })
       .eq('id', match.id);
 
-    // Clear the winner from the next match if there is one
-    if (match.next_match_id) {
+    // Remove the winner from the next match slot (but don't clear that match's results)
+    if (match.next_match_id && match.winner_id) {
       const updateField = match.next_match_slot === 1 ? 'player1_id' : 'player2_id';
       await supabase
         .from('matches')
-        .update({
-          [updateField]: null,
-          status: 'pending',
-          player1_score: null,
-          player2_score: null,
-          winner_id: null,
-        })
+        .update({ [updateField]: null })
         .eq('id', match.next_match_id);
     }
 

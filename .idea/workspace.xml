@@ -5,23 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="0e7a2bd2-0c0f-44c7-80f6-2b8d8586ac5e" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/app/report/ReportClient.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/app/report/page.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/components/Bracket/BracketView.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/components/Bracket/NCAABracket.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/scripts/seed-database.ts" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/seed-database.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/api/matches/[id]/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/api/matches/[id]/route.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/Bracket/Bracket.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/Bracket/Bracket.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/Bracket/BracketClient.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/Bracket/BracketClient.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/Bracket/Match.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/Bracket/Match.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/Header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/Header.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/ScoreModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ScoreModal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/bracket.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/bracket.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -43,7 +28,7 @@
   "keyToString": {
     "Python.main.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "feature/quadrants",
     "last_opened_file_path": "/Users/jasongardner/Library/CloudStorage/OneDrive-Personal/Documents/17th Grade/CodingProjects/tnom-pingpong"
   }
 }]]></component>
