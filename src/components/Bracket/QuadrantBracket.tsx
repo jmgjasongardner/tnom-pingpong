@@ -185,9 +185,15 @@ function QuadrantDisplay({ matches, players }: { matches: Match[]; players: Play
       const startOffset = spacing / 2 - matchHeight / 2;
 
       roundMatches.forEach((match, idx) => {
+        // For mirrored quadrants, only reverse sweet_16 and elite_8 to align with feeder relationships
+        const shouldReverse = mirrored && (round === 'sweet_16' || round === 'elite_8');
+        if (shouldReverse) {
+          console.log(`Reversing ${round} match idx ${idx} -> visualIdx ${count - 1 - idx}`);
+        }
+        const visualIdx = shouldReverse ? (count - 1 - idx) : idx;
         pos.set(match.id, {
           x,
-          y: startOffset + idx * spacing,
+          y: startOffset + visualIdx * spacing,
         });
       });
     }
