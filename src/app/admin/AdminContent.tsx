@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Match, Player, ROUND_NAMES, ROUND_ORDER } from '@/types/bracket';
@@ -15,7 +15,7 @@ export function AdminContent() {
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [editMode, setEditMode] = useState<'score' | 'seeding' | null>(null);
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     // Check admin key

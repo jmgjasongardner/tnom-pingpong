@@ -32,7 +32,7 @@ function triangularSum(start: number, end: number): number {
   return sum;
 }
 
-interface PlayerStanding {
+export interface PlayerStanding {
   player: Player;
   wins: number;
   points: number;
@@ -44,7 +44,7 @@ interface PlayerStanding {
   isWinner: boolean;
 }
 
-function calculateStandings(matches: Match[], players: Player[]): PlayerStanding[] {
+export function calculateStandings(matches: Match[], players: Player[]): PlayerStanding[] {
   const playerMap = new Map(players.map(p => [p.id, p]));
 
   // Count wins for each player
